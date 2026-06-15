@@ -66,6 +66,11 @@ html,body{min-height:100vh;font-family:'Jost',sans-serif;background:var(--cream)
 .quote-dash{display:block;width:28px;height:.5px;background:var(--rose);margin:12px auto 0}
 .quote-by{font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:3px;text-transform:uppercase}
 .footer{background:var(--white);border-top:.5px solid var(--border);padding:20px 32px;display:flex;align-items:center;justify-content:space-between}
+.fb-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#1877f2;color:#fff;border:none;border-radius:2px;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;font-family:'Jost',sans-serif;transition:background .2s,transform .2s}
+.fb-btn:hover{background:#145dc4;transform:translateY(-1px)}
+.fb-btn i{font-size:15px}
+.nav-actions{display:flex;align-items:center;gap:10px}
+@media (max-width:480px){.fb-btn span{display:none}.fb-btn{padding:8px 10px}}
 .footer-brand{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);letter-spacing:4px}
 .footer-text{font-size:10px;color:var(--muted);letter-spacing:1px}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(44,32,40,.55);z-index:200;align-items:center;justify-content:center;padding:20px}
@@ -154,10 +159,15 @@ html,body{min-height:100vh;font-family:'Jost',sans-serif;background:var(--cream)
     <div class="brand-name">JZM</div>
     <div class="brand-sub">Boutique</div>
   </div>
-  <button class="cart-nav-btn" onclick="abrirCarrito()">
-    <i class="ti ti-shopping-bag" style="font-size:15px"></i> Carrito
-    <span class="cart-badge" id="cart-badge">0</span>
-  </button>
+  <div class="nav-actions">
+    <a class="fb-btn" href="https://www.facebook.com/share/1Gq6GvJqW2/" target="_blank" rel="noopener">
+      <i class="ti ti-brand-facebook"></i> <span>Síguenos en Facebook</span>
+    </a>
+    <button class="cart-nav-btn" onclick="abrirCarrito()">
+      <i class="ti ti-shopping-bag" style="font-size:15px"></i> Carrito
+      <span class="cart-badge" id="cart-badge">0</span>
+    </button>
+  </div>
 </nav>
 
 <div id="panel-cliente">
