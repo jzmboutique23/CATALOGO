@@ -478,12 +478,12 @@ function enviarPedido() {
   if (!nombre) { alert('Por favor ingresa tu nombre'); return; }
   const total = totalCarrito();
   const regalo = total >= REGALO_MINIMO;
-  let msg = `Hola! Soy *${nombre}* y quiero hacer un pedido en *JZM Boutique* 👑\n\n`;
+  let msg = `Hola! Soy *${nombre}* y quiero hacer un pedido en *JZM Boutique* \n\n`;
   msg += `*MI PEDIDO:*\n`;
   carrito.forEach(c => { msg += `• ${c.nombre} — Talla: ${c.talla} x${c.qty} = $${(c.precio * c.qty).toLocaleString()}\n`; });
   msg += `\n*TOTAL: $${total.toLocaleString()}*\n`;
-  if (regalo) msg += `🎁 *¡Incluye regalo sorpresa!*\n`;
-  msg += `\nQuedo a la espera de confirmación. ¡Gracias! 💕`;
+  if (regalo) msg += `*¡Incluye regalo sorpresa!*\n`;
+  msg += `\nQuedo a la espera de confirmación. ¡Gracias!`;
   window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
