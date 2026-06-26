@@ -153,7 +153,7 @@ html,body{min-height:100vh;font-family:'Jost',sans-serif;background:var(--cream)
 .visit-counter i{font-size:13px;color:var(--rose)}
 /* Banner de notificaciones */
 .notif-banner{background:linear-gradient(135deg,var(--charcoal),#3d2a35);color:var(--white);padding:12px 32px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;letter-spacing:1px}
-.notif-banner.hidden{display:none}
+.notif-banner.hidden{display:none!important}
 .notif-banner-text{display:flex;align-items:center;gap:8px}
 .notif-banner-text i{font-size:16px;color:var(--gold-light)}
 .notif-banner-actions{display:flex;gap:8px;flex-shrink:0}
@@ -169,8 +169,8 @@ html,body{min-height:100vh;font-family:'Jost',sans-serif;background:var(--cream)
 </head>
 <body>
 
-<!-- Banner de permiso de notificaciones -->
-<div class="notif-banner" id="notif-banner">
+<!-- Banner de permiso de notificaciones (oculto por defecto, JS lo muestra si aplica) -->
+<div class="notif-banner hidden" id="notif-banner">
   <div class="notif-banner-text">
     <i class="ti ti-bell-ringing"></i>
     <span>¿Quieres recibir alertas cuando lleguen nuevos productos a JZM Boutique?</span>
@@ -348,6 +348,7 @@ function onRefreshOk() {
   const h = lastRefresh.getHours().toString().padStart(2,'0');
   const m = lastRefresh.getMinutes().toString().padStart(2,'0');
   setRefreshLabel('Actualizado a las ' + h + ':' + m);
+  verificarNuevosProductos();
 }
 
 function setRefreshLabel(txt) {
@@ -593,46 +594,52 @@ iniciarAutoRefresh();
 /* =============================================
    NOTIFICACIONES PUSH / BANNER
    ============================================= */
-const NOTIF_KEY = 'jzm_notif_descartado';
+const NOTIF_KEY = 'jzm_notif_decision'; // 'granted' | 'denied' | 'dismissed'
 const NOTIF_PRODS_KEY = 'jzm_notif_prods_vistos';
 
-// Mostrar banner si no se ha descartado y las notificaciones no están concedidas
+// Mostrar banner solo si nunca se tomó una decisión
 (function iniciarBanner() {
-  if (localStorage.getItem(NOTIF_KEY)) return;
+  const decision = localStorage.getItem(NOTIF_KEY);
+  // Ya tomó decisión antes → nunca mostrar el banner de nuevo
+  if (decision) return;
+  // El navegador ya tiene permiso → registrar y no mostrar
   if ('Notification' in window && Notification.permission === 'granted') {
-    document.getElementById('notif-banner').classList.add('hidden');
+    localStorage.setItem(NOTIF_KEY, 'granted');
     return;
   }
-  if ('Notification' in window && Notification.permission !== 'denied') {
-    // Mostrar banner luego de 3 segundos
+  // El navegador denegó → registrar y no mostrar
+  if ('Notification' in window && Notification.permission === 'denied') {
+    localStorage.setItem(NOTIF_KEY, 'denied');
+    return;
+  }
+  // Mostrar banner una sola vez después de 3 segundos
+  if ('Notification' in window) {
     setTimeout(() => {
       document.getElementById('notif-banner').classList.remove('hidden');
     }, 3000);
-  } else {
-    document.getElementById('notif-banner').classList.add('hidden');
   }
 })();
 
 function descartarBanner() {
-  localStorage.setItem(NOTIF_KEY, '1');
+  localStorage.setItem(NOTIF_KEY, 'dismissed');
   document.getElementById('notif-banner').classList.add('hidden');
 }
 
 function pedirPermiso() {
+  document.getElementById('notif-banner').classList.add('hidden');
   if (!('Notification' in window)) {
     mostrarToast('Tu navegador no soporta notificaciones 😔');
-    descartarBanner();
+    localStorage.setItem(NOTIF_KEY, 'denied');
     return;
   }
   Notification.requestPermission().then(perm => {
-    descartarBanner();
+    localStorage.setItem(NOTIF_KEY, perm); // guarda 'granted' o 'denied'
     if (perm === 'granted') {
       mostrarToast('✅ ¡Notificaciones activadas! Te avisaremos de nuevos productos.');
-      // Guardar los IDs de productos actuales para comparar después
       const ids = prods.map(p => p.id).sort().join(',');
       localStorage.setItem(NOTIF_PRODS_KEY, ids);
     } else {
-      mostrarToast('Notificaciones desactivadas. Puedes activarlas desde tu navegador.');
+      mostrarToast('Notificaciones no activadas. Puedes cambiarlas desde tu navegador.');
     }
   });
 }
@@ -643,53 +650,37 @@ function mostrarToast(msg) {
   const msgEl = document.getElementById('notif-toast-msg');
   msgEl.textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 4000);
+  setTimeout(() => toast.classList.remove('show'), 4500);
 }
 
 // Enviar notificación nativa del navegador
 function enviarNotifNativa(titulo, cuerpo, icono) {
-  if (Notification.permission !== 'granted') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
-    new Notification(titulo, {
-      body: cuerpo,
-      icon: icono || '',
-      badge: icono || ''
-    });
+    new Notification(titulo, { body: cuerpo, icon: icono || '' });
   } catch(e) {}
 }
 
-// Detectar nuevos productos al hacer refresh y notificar
-const _onRefreshOkOriginal = onRefreshOk;
-function onRefreshOk() {
-  _onRefreshOkOriginal();
-  verificarNuevosProductos();
-}
-
+// Verificar nuevos productos tras cada refresh (llamada desde onRefreshOk)
 function verificarNuevosProductos() {
   const idsActuales = prods.map(p => p.id).sort().join(',');
   const idsVistos = localStorage.getItem(NOTIF_PRODS_KEY);
   if (!idsVistos) {
-    // Primera vez: guardar sin notificar
     localStorage.setItem(NOTIF_PRODS_KEY, idsActuales);
     return;
   }
-  if (idsVistos !== idsActuales) {
-    // Hay cambio en el catálogo
-    const nuevosIds = prods.map(p => p.id).filter(id => !idsVistos.split(',').includes(String(id)));
-    localStorage.setItem(NOTIF_PRODS_KEY, idsActuales);
-    if (nuevosIds.length > 0) {
-      const nuevos = prods.filter(p => nuevosIds.includes(p.id));
-      const nombres = nuevos.map(p => p.nombre).join(', ');
-      const msg = nuevos.length === 1
-        ? '🛍️ Nuevo producto: ' + nombres
-        : '🛍️ ' + nuevos.length + ' nuevos productos: ' + nombres;
-      mostrarToast(msg);
-      enviarNotifNativa(
-        '¡Nuevo en JZM Boutique! 🎀',
-        msg,
-        document.getElementById('hero-logo') ? document.getElementById('hero-logo').src : ''
-      );
-    }
+  if (idsVistos === idsActuales) return;
+  const setVistos = new Set(idsVistos.split(','));
+  const nuevos = prods.filter(p => !setVistos.has(String(p.id)));
+  localStorage.setItem(NOTIF_PRODS_KEY, idsActuales);
+  if (nuevos.length > 0) {
+    const nombres = nuevos.map(p => p.nombre).join(', ');
+    const msg = nuevos.length === 1
+      ? '🛍️ Nuevo producto: ' + nombres
+      : '🛍️ ' + nuevos.length + ' nuevos productos: ' + nombres;
+    mostrarToast(msg);
+    const logo = document.getElementById('hero-logo');
+    enviarNotifNativa('¡Nuevo en JZM Boutique! 🎀', msg, logo ? logo.src : '');
   }
 }
 </script>
