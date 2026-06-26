@@ -322,12 +322,16 @@ function cargarProductos(esRecarga) {
     .then(r => r.json())
     .then(data => {
       prods = Array.isArray(data) ? data : [];
+      // DEBUG: ver qué tallas llegan
+      if (prods.length > 0) console.log('TALLAS ejemplo:', JSON.stringify(prods[0].tallas));
       renderGrid();
       onRefreshOk();
     })
     .catch(() => {
       window._cb = function(data) {
         prods = Array.isArray(data) ? data : [];
+        // DEBUG: ver qué tallas llegan
+        if (prods.length > 0) console.log('TALLAS ejemplo (JSONP):', JSON.stringify(prods[0].tallas));
         renderGrid();
         onRefreshOk();
       };
@@ -618,6 +622,23 @@ const NOTIF_PRODS_KEY = 'jzm_notif_prods_vistos';
       document.getElementById('notif-banner').classList.remove('hidden');
     }, 3000);
   }
+})();
+
+// Botón de prueba de notificación (solo visible si ya tiene permiso)
+(function mostrarBotonPrueba() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const btn = document.createElement('button');
+  btn.id = 'notif-test-btn';
+  btn.innerHTML = '<i class="ti ti-bell"></i>';
+  btn.title = 'Probar notificación';
+  btn.style.cssText = 'position:fixed;bottom:24px;right:24px;width:42px;height:42px;border-radius:50%;background:var(--rose);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:9998;opacity:.7;transition:opacity .2s';
+  btn.onmouseover = () => btn.style.opacity = '1';
+  btn.onmouseout = () => btn.style.opacity = '.7';
+  btn.onclick = () => {
+    enviarNotifNativa('🔔 Notificaciones activas', '¡Las notificaciones de JZM Boutique funcionan correctamente!', '');
+    mostrarToast('✅ Notificación enviada — revisa tu barra del sistema');
+  };
+  document.body.appendChild(btn);
 })();
 
 function descartarBanner() {
