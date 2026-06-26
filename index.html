@@ -376,7 +376,10 @@ function sLabel(s){ return s===0?'Agotado':s<=3?'Últimas piezas':'Disponible'; 
 
 function getTallasDisponibles(p) {
   if (p.tallas && typeof p.tallas === 'object') {
-    return Object.entries(p.tallas).filter(([,q]) => q > 0).map(([t]) => t);
+    return Object.entries(p.tallas)
+      .filter(([, q]) => q !== '' && q !== null && q !== undefined && Number(q) > 0)
+      .map(([t]) => t.trim())
+      .filter(Boolean);
   }
   if (p.tallas && typeof p.tallas === 'string') {
     return p.tallas.split(',').map(s => s.trim()).filter(Boolean);
