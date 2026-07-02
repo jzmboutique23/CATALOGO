@@ -702,9 +702,15 @@ function verificarNuevosProductos() {
     const msg = nuevos.length === 1
       ? '🛍️ Nuevo producto: ' + nombres
       : '🛍️ ' + nuevos.length + ' nuevos productos: ' + nombres;
-    mostrarToast(msg);
     const logo = document.getElementById('hero-logo');
-    enviarNotifNativa('¡Nuevo en JZM Boutique! 🎀', msg, logo ? logo.src : '');
+    const tienePermiso = ('Notification' in window) && Notification.permission === 'granted';
+    if (tienePermiso) {
+      // Ya aceptó las notificaciones: solo va a la barra de notificaciones del sistema
+      enviarNotifNativa('¡Nuevo en JZM Boutique! 🎀', msg, logo ? logo.src : '');
+    } else {
+      // No tiene permiso activado: se avisa dentro de la página
+      mostrarToast(msg);
+    }
   }
 }
 </script>
